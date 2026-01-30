@@ -1,0 +1,6 @@
+{
+  "name": "Emboard property quiz",
+  "description": "An AI chatbot, 'Properly', specializing in Thai real estate and hospitality. It helps European buyers, investors, retirees, and digital nomads navigate the Thai property market. Powered by Gemini API.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
