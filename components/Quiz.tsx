@@ -1,39 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PropertyType, QuizAnswers } from '../types';
-import { ChevronLeftIcon, ChevronRightIcon, HomeIcon, LocationMarkerIcon, SparklesIcon as PoolIcon, CheckCircleIcon } from './icons';
+import { ChevronLeftIcon, ChevronRightIcon, LocationMarkerIcon, CheckCircleIcon } from './icons';
+import { propertyTypeImages, poolImages, popularLocations, quizSteps } from '../config/constants';
+import { useQuiz } from '../hooks/useQuiz';
 
 interface QuizProps {
   onQuizComplete: (answers: QuizAnswers) => void;
 }
-
-const quizSteps = [
-  { id: 'propertyType', title: 'Property Type', question: 'What type of property are you primarily interested in?', icon: <HomeIcon className="w-8 h-8 text-sky-400" /> },
-  { id: 'location', title: 'Preferred Location', question: 'Select a popular destination, or type your own preference.', icon: <LocationMarkerIcon className="w-8 h-8 text-sky-400" /> },
-  { id: 'pool', title: 'Pool Preference', question: 'Is having a pool (private or community) important to you?', icon: <PoolIcon className="w-8 h-8 text-sky-400" /> },
-];
-
-const propertyTypeImages: { [key in PropertyType]: string } = {
-    [PropertyType.CONDOMINIUM]: 'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?q=80&w=800&auto=format&fit=crop',
-    [PropertyType.SINGLE_FAMILY_HOME]: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=800&auto=format&fit=crop',
-    [PropertyType.TOWNHOUSE]: 'https://images.unsplash.com/photo-1605276374104-5de67d4619da?q=80&w=800&auto=format&fit=crop',
-    [PropertyType.APARTMENT]: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=800&auto=format&fit=crop',
-    [PropertyType.VILLA]: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=800&auto=format&fit=crop',
-    [PropertyType.DUPLEX]: 'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=800&auto=format&fit=crop',
-    [PropertyType.PENTHOUSE]: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop',
-};
-
-const poolImages = {
-    yes: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
-    no: 'https://images.unsplash.com/photo-1542359649-31e03cdde435?q=80&w=800&auto=format=fit=crop'
-};
-
-const popularLocations = [
-  { name: 'Bangkok', image: 'https://images.unsplash.com/photo-1539086915129-883ea5789481?q=80&w=400&auto=format&fit=crop', position: { top: '38%', left: '50%' } },
-  { name: 'Phuket', image: 'https://images.unsplash.com/photo-1589588978434-f99496384059?q=80&w=400&auto=format&fit=crop', position: { top: '80%', left: '35%' } },
-  { name: 'Chiang Mai', image: 'https://images.unsplash.com/photo-1596348482613-596985a133d1?q=80&w=400&auto=format=fit=crop', position: { top: '15%', left: '48%' } },
-  { name: 'Pattaya', image: 'https://images.unsplash.com/photo-1592911319024-e6b8c4331776?q=80&w=400&auto=format=fit=crop', position: { top: '48%', left: '68%' } },
-  { name: 'Hua Hin', image: 'https://images.unsplash.com/photo-1628177439343-a6b8e2103322?q=80&w=400&auto=format=fit=crop', position: { top: '55%', left: '52%' } },
-];
 
 const ThailandMapSVG = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 200" className="w-48 h-96 text-slate-700/50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 opacity-50" aria-hidden="true">
@@ -44,34 +17,22 @@ const ThailandMapSVG = () => (
 
 
 const Quiz: React.FC<QuizProps> = ({ onQuizComplete }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<QuizAnswers>({});
+  const {
+    currentStep,
+    answers,
+    handleInputChange,
+    nextStep,
+    prevStep,
+    currentQuizStep,
+    isLastStep
+  } = useQuiz(onQuizComplete);
 
-  const handleInputChange = (field: keyof QuizAnswers, value: any) => {
-    setAnswers(prev => ({ ...prev, [field]: value }));
-  };
-  
   const handleLocationSelect = (locationName: string) => {
     handleInputChange('location', locationName);
   };
 
-  const nextStep = () => {
-    if (currentStep < quizSteps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      onQuizComplete(answers);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
   const renderStepContent = () => {
-    const step = quizSteps[currentStep];
-    switch (step.id) {
+    switch (currentQuizStep.id) {
       case 'propertyType':
         return (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -173,8 +134,6 @@ const Quiz: React.FC<QuizProps> = ({ onQuizComplete }) => {
     }
   };
 
-  const currentQuizStep = quizSteps[currentStep];
-
   return (
     <div className="w-full max-w-2xl p-6 sm:p-8 bg-slate-800 shadow-2xl rounded-xl border border-slate-700">
       <div className="text-center mb-6">
@@ -212,7 +171,7 @@ const Quiz: React.FC<QuizProps> = ({ onQuizComplete }) => {
             disabled={!answers.location}
             className="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-lg transition-colors duration-150 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {currentStep === quizSteps.length - 1 ? 'View Matches' : 'Next'}
+            {isLastStep ? 'View Matches' : 'Next'}
             <ChevronRightIcon className="w-5 h-5 ml-1" />
           </button>
         )}
