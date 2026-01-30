@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import ChatInterface from './components/ChatInterface';
+import React, { useState, useEffect } from 'react';
 import { AppLogoIcon } from './components/icons';
 import Quiz from './components/Quiz';
 import QuizResults from './components/QuizResults';
 import Dashboard from './components/Dashboard';
-import { Property, PropertyType, QuizAnswers } from './types';
-import { sampleProperties } from './data/sampleProperties';
+import { QuizAnswers } from './types';
+import { usePropertyMatches } from './hooks/usePropertyMatches';
 
 type AppView = 'landing' | 'quiz' | 'quizResults' | 'dashboard';
 
 const App: React.FC = () => {
-  if (!process.env.API_KEY) {
+  if (!import.meta.env.VITE_GEMINI_API_KEY) {
     console.warn(
-      "API_KEY environment variable is not set. Gemini API calls will likely fail. " +
+      "VITE_GEMINI_API_KEY environment variable is not set. Gemini API calls will likely fail. " +
       "Please ensure it's configured in your environment (e.g., .env file and build setup)."
     );
   }
@@ -20,7 +19,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>('landing');
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [matchedProperties, setMatchedProperties] = useState<Array<Property & { compatibilityScore: number }>>([]);
+  const { matchedProperties, calculateAndSetMatches, setMatchedProperties } = usePropertyMatches();
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -33,31 +32,7 @@ const App: React.FC = () => {
       calculateAndSetMatches(parsedAnswers);
       setCurrentView('dashboard');
     }
-  }, []);
-
-  const calculateCompatibilityScore = (property: Property, answers: QuizAnswers): number => {
-    let score = 0;
-    if (answers.propertyType && property.propertyType === answers.propertyType) {
-      score += 40;
-    }
-    if (answers.location && property.location.toLowerCase().includes(answers.location.toLowerCase())) {
-      score += 30;
-    }
-    if (typeof answers.pool === 'boolean' && property.pool === answers.pool) {
-      score += 30;
-    }
-    return score;
-  };
-  
-  const calculateAndSetMatches = useCallback((answers: QuizAnswers) => {
-    const scoredProperties = sampleProperties
-      .map(p => ({
-        ...p,
-        compatibilityScore: calculateCompatibilityScore(p, answers),
-      }))
-      .sort((a, b) => b.compatibilityScore - a.compatibilityScore);
-    setMatchedProperties(scoredProperties);
-  }, []);
+  }, [calculateAndSetMatches]);
 
 
   const handleQuizComplete = (answers: QuizAnswers) => {
@@ -89,7 +64,7 @@ const App: React.FC = () => {
       case 'quiz':
         return <Quiz onQuizComplete={handleQuizComplete} />;
       case 'quizResults':
-        if (!quizAnswers) return <p>Something went wrong. Please retake the quiz.</p>;
+        if (!quizAnswers) return <p className="text-white">Something went wrong. Please retake the quiz.</p>;
         return (
           <QuizResults
             properties={matchedProperties}
